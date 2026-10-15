@@ -12,14 +12,21 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  USER
+  ADMIN
+}
+
 model User {
   id                          String    @id @default(cuid())
   name                        String?
   email                       String?   @unique
   emailVerified               DateTime?
   image                       String?
-  /// Only set for users who signed up with the email/password fallback.
+  /// Only set for users who signed up with the email/password fallback. Always a bcrypt
+  /// hash (see src/lib/password.ts) — the plaintext password is never stored or logged.
   passwordHash                String?
+  role                        Role      @default(USER)
   /// Default reminder lead time (minutes before a call) for bookings involving this user.
   defaultReminderLeadMinutes  Int       @default(30)
   createdAt                   DateTime  @default(now())

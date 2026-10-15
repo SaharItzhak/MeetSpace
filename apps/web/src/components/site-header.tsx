@@ -22,6 +22,11 @@ export default async function SiteHeader() {
               <Link href="/dashboard" className="text-slate-600 hover:text-slate-900">
                 Dashboard
               </Link>
+              {session.user.role === "ADMIN" && (
+                <Link href="/admin" className="text-slate-600 hover:text-slate-900">
+                  Admin
+                </Link>
+              )}
               <form action={signOutAction}>
                 <button
                   type="submit"

@@ -10,6 +10,7 @@ declare module "next-auth" {
   interface Session {
     user: {
       id: string;
+      role: "USER" | "ADMIN";
     } & DefaultSession["user"];
   }
 }
@@ -69,16 +70,45 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user?.id) {
         token.sub = user.id;
       }
+      // Re-read role from the DB on every token refresh (not just at sign-in) so an
+      // admin promotion/demotion (via the /admin UI or ADMIN_BOOTSTRAP_EMAILS) takes
+      // effect on the user's next request without forcing them to sign out first.
+      if (token.sub) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.sub },
+          select: { role: true, email: true },
+        });
+        if (dbUser) {
+          token.role = dbUser.role;
+          if (dbUser.role !== "ADMIN" && dbUser.email && isBootstrapAdminEmail(dbUser.email)) {
+            await prisma.user.update({ where: { id: token.sub }, data: { role: "ADMIN" } });
+            token.role = "ADMIN";
+          }
+        }
+      }
       return token;
     },
     async session({ session, token }) {
       if (session.user && token.sub) {
         session.user.id = token.sub;
+        session.user.role = (token.role as "USER" | "ADMIN" | undefined) ?? "USER";
       }
       return session;
     },
   },
 });
+
+/** Comma-separated emails (set via env, never in code) that are always treated as
+ * ADMIN. Lets the deployer bootstrap their own first admin account — via Google
+ * sign-in or email/password registration — without anyone else ever handling their
+ * credentials. */
+function isBootstrapAdminEmail(email: string): boolean {
+  const list = (process.env.ADMIN_BOOTSTRAP_EMAILS ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  return list.includes(email.toLowerCase());
+}
 
 /** Scope requested when a signed-in user opts in to becoming a Provider. */
 export const GOOGLE_CALENDAR_SCOPE =

@@ -32,6 +32,7 @@ yarn-error.log*
 server*.log
 devserver*.log
 prodserver*.log
+demoserver*.log
 
 # Vercel
 .vercel

@@ -9,6 +9,17 @@ const schema = z.object({
   password: z.string().min(8).max(200),
 });
 
+/** Comma-separated emails (set via env, never in code) that get promoted to ADMIN the
+ * moment they register. Lets the deployer bootstrap their own first admin account
+ * without anyone else ever seeing or handling their password. */
+function isBootstrapAdminEmail(email: string): boolean {
+  const list = (process.env.ADMIN_BOOTSTRAP_EMAILS ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  return list.includes(email.toLowerCase());
+}
+
 /** Email/password signup fallback for users who don't want to use Google OAuth. */
 export async function POST(request: Request) {
   const parsed = schema.safeParse(await request.json());
@@ -23,7 +34,9 @@ export async function POST(request: Request) {
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
-  const user = await prisma.user.create({ data: { name, email, passwordHash } });
+  const user = await prisma.user.create({
+    data: { name, email, passwordHash, role: isBootstrapAdminEmail(email) ? "ADMIN" : "USER" },
+  });
 
   return NextResponse.json({ user: { id: user.id, email: user.email } });
 }

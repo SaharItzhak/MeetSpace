@@ -93,6 +93,28 @@ Copy `apps/web/.env.example` to `apps/web/.env` and fill in real values. Summary
 | `EMAIL_FROM` | no (has default) | "From" address used for reminder/notification emails |
 | `CRON_SECRET` | yes (once deployed) | Bearer token the reminders-cron GitHub Action must present to `/api/cron/reminders` |
 | `MOCK_CALENDAR` / `MOCK_EMAIL` | no | Set to `1` to use in-memory fake Calendar/Email adapters instead of real Google/Resend — used automatically in CI and recommended until you've configured real credentials |
+| `ADMIN_BOOTSTRAP_EMAILS` | no | Comma-separated email addresses that are automatically promoted to admin the moment they sign in/register — see [Admin accounts](#admin-accounts) |
+
+## Admin accounts
+
+Every user has a `role` of `USER` or `ADMIN`. Admins get an **Admin** link in the nav bar
+to `/admin`, a simple table of every account where they can promote/demote other admins
+or delete accounts (an admin can't demote or delete themselves, so you can't lock
+yourself out).
+
+To make yourself the first admin without anyone else ever handling your password:
+
+1. Register your own account normally (Google sign-in, or email/password via `/register`).
+2. Either:
+   - Set `ADMIN_BOOTSTRAP_EMAILS=you@example.com` in your deployment's env vars **before**
+     registering (or before your next sign-in) — you'll be promoted automatically, or
+   - If you already registered, run `npm run promote-admin --workspace=apps/web -- you@example.com`
+     against the production database (e.g. from your machine with `DATABASE_URL` pointed
+     at prod, or a one-off deploy hook).
+
+For local testing, `npm run db:seed --workspace=apps/web` also creates a demo admin
+account: `admin@test.local` / `test-password-123` (same throwaway password as the demo
+provider account — never used outside local/dev seeding).
 
 ## Running locally
 

@@ -27,6 +27,18 @@ async function main() {
     },
   });
 
+  // Demo-only admin account so the /admin user-management page can be tried out
+  // locally. Same throwaway password as the other seeded fixture account — never used
+  // in production, where real admins are designated via ADMIN_BOOTSTRAP_EMAILS instead.
+  await prisma.user.create({
+    data: {
+      name: "Test Admin",
+      email: "admin@test.local",
+      passwordHash,
+      role: "ADMIN",
+    },
+  });
+
   await prisma.providerProfile.create({
     data: {
       userId: provider.id,

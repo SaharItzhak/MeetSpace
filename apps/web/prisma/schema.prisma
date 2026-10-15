@@ -1,0 +1,181 @@
+// MeetSpace Prisma schema.
+// Postgres is used in all environments (Supabase or Neon free tier — see README).
+// NextAuth's Account/Session/VerificationToken tables follow the standard Auth.js
+// Prisma adapter shape so @auth/prisma-adapter works without modification.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                          String    @id @default(cuid())
+  name                        String?
+  email                       String?   @unique
+  emailVerified               DateTime?
+  image                       String?
+  /// Only set for users who signed up with the email/password fallback.
+  passwordHash                String?
+  /// Default reminder lead time (minutes before a call) for bookings involving this user.
+  defaultReminderLeadMinutes  Int       @default(30)
+  createdAt                   DateTime  @default(now())
+  updatedAt                   DateTime  @updatedAt
+
+  accounts        Account[]
+  sessions        Session[]
+  providerProfile ProviderProfile?
+  bookingsAsUser  Booking[]        @relation("BookingRequesterUser")
+
+  @@map("users")
+}
+
+/// NextAuth Account — stores the Google OAuth tokens (including calendar scope grants).
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+/// Created the moment a User opts in to being a Provider (triggers incremental OAuth
+/// consent for the Google Calendar scope).
+model ProviderProfile {
+  id                          String   @id @default(cuid())
+  userId                      String   @unique
+  /// Public booking page slug, e.g. /book/jane-doe
+  slug                        String   @unique
+  displayName                 String
+  bio                         String?
+  /// IANA timezone the provider's weekly availability is expressed in.
+  timezone                    String   @default("UTC")
+  slotDurationMinutes         Int      @default(30)
+  defaultReminderLeadMinutes  Int      @default(30)
+  /// Which of the provider's Google calendars to read/write. "primary" by default.
+  googleCalendarId            String   @default("primary")
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
+
+  user           User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weeklyRules    WeeklyAvailabilityRule[]
+  blackoutDates  BlackoutDate[]
+  bookings       Booking[]
+
+  @@map("provider_profiles")
+}
+
+model WeeklyAvailabilityRule {
+  id                String @id @default(cuid())
+  providerProfileId String
+  /// 0 = Sunday ... 6 = Saturday
+  dayOfWeek         Int
+  /// Minutes since local midnight.
+  startMinute       Int
+  endMinute         Int
+
+  providerProfile ProviderProfile @relation(fields: [providerProfileId], references: [id], onDelete: Cascade)
+
+  @@index([providerProfileId])
+  @@map("weekly_availability_rules")
+}
+
+model BlackoutDate {
+  id                String   @id @default(cuid())
+  providerProfileId String
+  startDate         DateTime
+  endDate           DateTime
+  reason            String?
+
+  providerProfile ProviderProfile @relation(fields: [providerProfileId], references: [id], onDelete: Cascade)
+
+  @@index([providerProfileId])
+  @@map("blackout_dates")
+}
+
+enum BookingStatus {
+  PENDING
+  APPROVED
+  DECLINED
+  CANCELLED
+}
+
+model Booking {
+  id                 String        @id @default(cuid())
+  providerProfileId  String
+  /// Set if the requester was signed in at booking time; guest bookings leave this null
+  /// and are instead tracked via the single-use `cancelToken` below.
+  requesterUserId    String?
+  requesterName      String
+  requesterEmail     String
+  requesterPhone     String
+  note               String?
+  startsAt           DateTime
+  endsAt             DateTime
+  status             BookingStatus @default(PENDING)
+  /// Minutes before `startsAt` our own reminder email should fire (copied from the
+  /// provider's or requester's default at creation time, overridable per booking).
+  reminderLeadMinutes Int
+  videoCallUrl       String
+  /// Google Calendar event id, set once the provider approves the booking.
+  externalEventId    String?
+  /// Opaque token allowing a guest (no account) to cancel their own booking via email link.
+  cancelToken        String        @unique @default(cuid())
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  providerProfile ProviderProfile @relation(fields: [providerProfileId], references: [id], onDelete: Cascade)
+  requesterUser   User?           @relation("BookingRequesterUser", fields: [requesterUserId], references: [id], onDelete: SetNull)
+  reminder        ReminderLog?
+
+  @@index([providerProfileId, startsAt])
+  @@index([status, startsAt])
+  @@map("bookings")
+}
+
+/// One row per booking once its reminder email has been sent — the unique constraint on
+/// `bookingId` is what makes the 5-minute cron poll idempotent (it only ever inserts once).
+model ReminderLog {
+  id        String   @id @default(cuid())
+  bookingId String   @unique
+  sentAt    DateTime @default(now())
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("reminder_logs")
+}

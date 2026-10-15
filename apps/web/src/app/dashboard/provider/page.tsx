@@ -29,10 +29,10 @@ export default async function ProviderDashboardPage() {
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-10">
-      <h1 className="text-2xl font-semibold">Provider settings</h1>
+      <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Provider settings</h1>
 
-      <section className="mt-6 rounded-md border border-slate-200 p-4">
-        <h2 className="font-medium">Google Calendar</h2>
+      <section className="card mt-6">
+        <h2 className="font-semibold text-slate-900">Google Calendar</h2>
         <p className="mt-1 text-sm text-slate-600">
           {hasCalendarScope
             ? "Connected. Your real busy times are checked and approved bookings create calendar invites."
@@ -40,9 +40,7 @@ export default async function ProviderDashboardPage() {
         </p>
         {!hasCalendarScope && (
           <form action={connectGoogleCalendarAction} className="mt-3">
-            <button className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white">
-              Connect Google Calendar
-            </button>
+            <button className="btn-primary">Connect Google Calendar</button>
           </form>
         )}
       </section>
@@ -58,6 +56,12 @@ export default async function ProviderDashboardPage() {
                   slotDurationMinutes: providerProfile.slotDurationMinutes,
                   defaultReminderLeadMinutes: providerProfile.defaultReminderLeadMinutes,
                   bio: providerProfile.bio ?? "",
+                  requireApproval: providerProfile.requireApproval,
+                  welcomeMessage: providerProfile.welcomeMessage ?? "",
+                  minNoticeMinutes: providerProfile.minNoticeMinutes,
+                  maxAdvanceDays: providerProfile.maxAdvanceDays,
+                  bufferMinutes: providerProfile.bufferMinutes,
+                  accentColor: providerProfile.accentColor,
                 }
               : null
           }

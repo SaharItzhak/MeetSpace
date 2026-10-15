@@ -10,8 +10,6 @@ import {
 } from "@meetspace/shared";
 import type { ProviderProfile } from "@prisma/client";
 
-const SLOT_SEARCH_DAYS = 21;
-
 /** Computes the open, bookable slots for a provider's public booking page. */
 export async function getAvailableSlotsForProvider(
   providerProfile: ProviderProfile
@@ -22,7 +20,10 @@ export async function getAvailableSlotsForProvider(
   ]);
 
   const rangeStart = new Date();
-  const rangeEnd = new Date(rangeStart.getTime() + SLOT_SEARCH_DAYS * 24 * 60 * 60 * 1000);
+  const rangeEnd = new Date(
+    rangeStart.getTime() + providerProfile.maxAdvanceDays * 24 * 60 * 60 * 1000
+  );
+  const bufferMs = providerProfile.bufferMinutes * 60_000;
 
   let busyIntervals: { start: Date; end: Date }[] = [];
   try {
@@ -56,6 +57,15 @@ export async function getAvailableSlotsForProvider(
     existingBookings.map((b) => ({ start: b.startsAt, end: b.endsAt }))
   );
 
+  // Pad every busy interval by the provider's configured buffer so back-to-back calls
+  // always leave breathing room, instead of only preventing exact overlaps.
+  if (bufferMs > 0) {
+    busyIntervals = busyIntervals.map((interval) => ({
+      start: new Date(interval.start.getTime() - bufferMs),
+      end: new Date(interval.end.getTime() + bufferMs),
+    }));
+  }
+
   return computeAvailableSlots({
     weeklyRules: weeklyRules.map((r) => ({
       dayOfWeek: r.dayOfWeek as 0 | 1 | 2 | 3 | 4 | 5 | 6,
@@ -68,6 +78,7 @@ export async function getAvailableSlotsForProvider(
     slotDurationMinutes: providerProfile.slotDurationMinutes,
     rangeStart,
     rangeEnd,
+    minNoticeMinutes: providerProfile.minNoticeMinutes,
   });
 }
 

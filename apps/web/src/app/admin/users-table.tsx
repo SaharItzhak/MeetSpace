@@ -64,49 +64,43 @@ export default function UsersTable({
   return (
     <div>
       {error && (
-        <p className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
+        <p className="m-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
       )}
-      <div className="overflow-x-auto rounded-lg border border-slate-200">
+      <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-slate-200 text-sm">
-          <thead className="bg-slate-50">
+          <thead className="bg-slate-50/80">
             <tr>
-              <th className="px-4 py-2 text-left font-medium text-slate-600">Name</th>
-              <th className="px-4 py-2 text-left font-medium text-slate-600">Email</th>
-              <th className="px-4 py-2 text-left font-medium text-slate-600">Role</th>
-              <th className="px-4 py-2 text-left font-medium text-slate-600">Provider?</th>
-              <th className="px-4 py-2 text-left font-medium text-slate-600">Joined</th>
-              <th className="px-4 py-2 text-right font-medium text-slate-600">Actions</th>
+              <th className="px-4 py-2.5 text-left font-medium text-slate-600">Name</th>
+              <th className="px-4 py-2.5 text-left font-medium text-slate-600">Email</th>
+              <th className="px-4 py-2.5 text-left font-medium text-slate-600">Role</th>
+              <th className="px-4 py-2.5 text-left font-medium text-slate-600">Provider?</th>
+              <th className="px-4 py-2.5 text-left font-medium text-slate-600">Joined</th>
+              <th className="px-4 py-2.5 text-right font-medium text-slate-600">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {users.map((u) => {
               const isSelf = u.id === currentUserId;
               return (
-                <tr key={u.id}>
-                  <td className="px-4 py-2">{u.name ?? "—"}</td>
-                  <td className="px-4 py-2">{u.email ?? "—"}</td>
-                  <td className="px-4 py-2">
-                    <span
-                      className={
-                        u.role === "ADMIN"
-                          ? "rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700"
-                          : "rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600"
-                      }
-                    >
+                <tr key={u.id} className="hover:bg-slate-50/60">
+                  <td className="px-4 py-2.5">{u.name ?? "—"}</td>
+                  <td className="px-4 py-2.5">{u.email ?? "—"}</td>
+                  <td className="px-4 py-2.5">
+                    <span className={`badge ${u.role === "ADMIN" ? "badge-admin" : "badge-user"}`}>
                       {u.role}
                     </span>
                     {isSelf && <span className="ml-2 text-xs text-slate-400">(you)</span>}
                   </td>
-                  <td className="px-4 py-2">{u.providerSlug ?? "—"}</td>
-                  <td className="px-4 py-2">{new Date(u.createdAt).toLocaleDateString()}</td>
-                  <td className="px-4 py-2 text-right">
+                  <td className="px-4 py-2.5">{u.providerSlug ?? "—"}</td>
+                  <td className="px-4 py-2.5">{new Date(u.createdAt).toLocaleDateString()}</td>
+                  <td className="px-4 py-2.5 text-right">
                     <div className="flex justify-end gap-2">
                       {u.role === "ADMIN" ? (
                         <button
                           type="button"
                           disabled={isSelf || busyId === u.id}
                           onClick={() => setRole(u.id, "USER")}
-                          className="rounded-md border border-slate-300 px-2 py-1 text-xs disabled:opacity-40"
+                          className="btn-xs"
                         >
                           Demote
                         </button>
@@ -115,7 +109,7 @@ export default function UsersTable({
                           type="button"
                           disabled={busyId === u.id}
                           onClick={() => setRole(u.id, "ADMIN")}
-                          className="rounded-md border border-slate-300 px-2 py-1 text-xs disabled:opacity-40"
+                          className="btn-xs"
                         >
                           Make admin
                         </button>
@@ -124,7 +118,7 @@ export default function UsersTable({
                         type="button"
                         disabled={isSelf || busyId === u.id}
                         onClick={() => deleteUser(u.id, u.email ?? u.id)}
-                        className="rounded-md border border-red-300 px-2 py-1 text-xs text-red-600 disabled:opacity-40"
+                        className="btn-danger px-2.5 py-1"
                       >
                         Delete
                       </button>

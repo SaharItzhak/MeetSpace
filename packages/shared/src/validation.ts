@@ -44,5 +44,24 @@ export const providerSettingsSchema = z.object({
   slotDurationMinutes: z.number().int().min(5).max(480),
   defaultReminderLeadMinutes: z.number().int().min(0).max(1440),
   bio: z.string().max(2000).optional(),
+  requireApproval: z.boolean().default(false),
+  welcomeMessage: z.string().max(500).optional(),
+  minNoticeMinutes: z.number().int().min(0).max(10080).default(60),
+  maxAdvanceDays: z.number().int().min(1).max(180).default(21),
+  bufferMinutes: z.number().int().min(0).max(240).default(0),
+  accentColor: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/, "Must be a hex color like #4f46e5")
+    .default("#4f46e5"),
 });
 export type ProviderSettingsInput = z.infer<typeof providerSettingsSchema>;
+
+export const requestContactAccessSchema = z.object({
+  name: z.string().min(1).max(120),
+  email: z.string().email(),
+});
+export type RequestContactAccessInput = z.infer<typeof requestContactAccessSchema>;
+
+export const updateContactStatusSchema = z.object({
+  status: z.enum(["PENDING", "APPROVED", "BLOCKED"]),
+});

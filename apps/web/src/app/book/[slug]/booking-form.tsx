@@ -7,11 +7,19 @@ interface Slot {
   end: string;
 }
 
-export default function BookingForm({ providerSlug }: { providerSlug: string }) {
+export default function BookingForm({
+  providerSlug,
+  accentColor = "#4f46e5",
+  requesterEmail = "",
+}: {
+  providerSlug: string;
+  accentColor?: string;
+  requesterEmail?: string;
+}) {
   const [slots, setSlots] = useState<Slot[] | null>(null);
   const [selected, setSelected] = useState<Slot | null>(null);
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(requesterEmail);
   const [phone, setPhone] = useState("");
   const [note, setNote] = useState("");
   const [status, setStatus] = useState<string | null>(null);
@@ -58,42 +66,46 @@ export default function BookingForm({ providerSlug }: { providerSlug: string }) 
 
   return (
     <div>
-      <h2 className="font-medium">Pick an open time</h2>
+      <h2 className="font-semibold text-slate-900">Pick an open time</h2>
       {slots.length === 0 ? (
         <p className="mt-2 text-sm text-slate-500">No open slots in the next few weeks.</p>
       ) : (
         <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {slots.map((slot) => (
-            <button
-              key={slot.start}
-              onClick={() => setSelected(slot)}
-              className={`rounded-md border px-3 py-2 text-xs ${
-                selected?.start === slot.start
-                  ? "border-slate-900 bg-slate-900 text-white"
-                  : "border-slate-300"
-              }`}
-            >
-              {new Date(slot.start).toLocaleString(undefined, {
-                weekday: "short",
-                month: "short",
-                day: "numeric",
-                hour: "numeric",
-                minute: "2-digit",
-              })}
-            </button>
-          ))}
+          {slots.map((slot) => {
+            const isSelected = selected?.start === slot.start;
+            return (
+              <button
+                key={slot.start}
+                onClick={() => setSelected(slot)}
+                className="rounded-lg border px-3 py-2 text-xs font-medium transition"
+                style={
+                  isSelected
+                    ? { backgroundColor: accentColor, borderColor: accentColor, color: "white" }
+                    : { borderColor: "#cbd5e1" }
+                }
+              >
+                {new Date(slot.start).toLocaleString(undefined, {
+                  weekday: "short",
+                  month: "short",
+                  day: "numeric",
+                  hour: "numeric",
+                  minute: "2-digit",
+                })}
+              </button>
+            );
+          })}
         </div>
       )}
 
       {selected ? (
         <form onSubmit={onSubmit} className="mt-6 space-y-3">
-          <h3 className="font-medium">Your details</h3>
+          <h3 className="font-semibold text-slate-900">Your details</h3>
           <input
             required
             placeholder="Your name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            className="input"
           />
           <input
             required
@@ -101,32 +113,33 @@ export default function BookingForm({ providerSlug }: { providerSlug: string }) 
             placeholder="Your email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            className="input"
           />
           <input
             required
             placeholder="Your phone number"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            className="input"
           />
           <textarea
             placeholder="Note (optional)"
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            className="input"
           />
           <button
             type="submit"
             disabled={submitting}
-            className="rounded-md bg-slate-900 px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50"
+            className="btn-primary"
+            style={{ backgroundColor: accentColor }}
           >
             {submitting ? "Sending..." : "Request this slot"}
           </button>
         </form>
       ) : null}
 
-      {status ? <p className="mt-4 text-sm">{status}</p> : null}
+      {status ? <p className="mt-4 text-sm text-slate-600">{status}</p> : null}
     </div>
   );
 }

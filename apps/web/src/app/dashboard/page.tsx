@@ -54,29 +54,36 @@ export default async function DashboardPage() {
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-10">
-      <h1 className="text-2xl font-semibold">Dashboard</h1>
+      <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Dashboard</h1>
 
       <section className="mt-8">
-        <h2 className="text-lg font-medium">Provider</h2>
+        <h2 className="text-lg font-medium text-slate-900">Provider</h2>
         {providerProfile ? (
-          <div className="mt-3 space-y-4">
+          <div className="card mt-3 space-y-4">
             <p className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
               Your public booking page:{" "}
-              <Link href={`/book/${providerProfile.slug}`} className="underline">
+              <Link href={`/book/${providerProfile.slug}`} className="font-medium text-indigo-600 hover:underline">
                 /book/{providerProfile.slug}
               </Link>
               <CopyLinkButton path={`/book/${providerProfile.slug}`} />
             </p>
-            <Link href="/dashboard/provider" className="text-sm underline">
-              Edit availability &amp; settings
-            </Link>
+            <div className="flex gap-4 text-sm">
+              <Link href="/dashboard/provider" className="font-medium text-indigo-600 hover:underline">
+                Edit availability &amp; settings
+              </Link>
+              {providerProfile.requireApproval && (
+                <Link href="/dashboard/provider/contacts" className="font-medium text-indigo-600 hover:underline">
+                  Manage approved contacts
+                </Link>
+              )}
+            </div>
 
-            <h3 className="mt-6 font-medium">Pending requests</h3>
+            <h3 className="mt-6 font-medium text-slate-900">Pending requests</h3>
             <ul className="mt-2 space-y-3">
               {providerProfile.bookings
                 .filter((b) => b.status === "PENDING")
                 .map((b) => (
-                  <li key={b.id} className="rounded-md border border-slate-200 p-3 text-sm">
+                  <li key={b.id} className="rounded-xl border border-slate-200 p-3 text-sm">
                     <p>
                       <strong>{b.requesterName}</strong> ({b.requesterEmail}, {b.requesterPhone}) —{" "}
                       {b.startsAt.toLocaleString()}
@@ -85,15 +92,11 @@ export default async function DashboardPage() {
                     <div className="mt-2 flex gap-2">
                       <form action={approveAction}>
                         <input type="hidden" name="bookingId" value={b.id} />
-                        <button className="rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white">
-                          Approve
-                        </button>
+                        <button className="btn-primary px-3 py-1.5 text-xs">Approve</button>
                       </form>
                       <form action={declineAction}>
                         <input type="hidden" name="bookingId" value={b.id} />
-                        <button className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium">
-                          Decline
-                        </button>
+                        <button className="btn-secondary px-3 py-1.5 text-xs">Decline</button>
                       </form>
                     </div>
                   </li>
@@ -103,40 +106,35 @@ export default async function DashboardPage() {
               ) : null}
             </ul>
 
-            <h3 className="mt-6 font-medium">Upcoming approved calls</h3>
+            <h3 className="mt-6 font-medium text-slate-900">Upcoming approved calls</h3>
             <ul className="mt-2 space-y-3">
               {providerProfile.bookings
                 .filter((b) => b.status === "APPROVED")
                 .map((b) => (
-                  <li key={b.id} className="rounded-md border border-slate-200 p-3 text-sm">
+                  <li key={b.id} className="rounded-xl border border-slate-200 p-3 text-sm">
                     <p>
                       <strong>{b.requesterName}</strong> — {b.startsAt.toLocaleString()}
                     </p>
                     <p className="text-slate-600">
                       Phone: {b.requesterPhone} · Video:{" "}
-                      <a href={b.videoCallUrl} className="underline">
+                      <a href={b.videoCallUrl} className="text-indigo-600 hover:underline">
                         {b.videoCallUrl}
                       </a>
                     </p>
                     <form action={cancelAsProviderAction} className="mt-2">
                       <input type="hidden" name="bookingId" value={b.id} />
-                      <button className="rounded-md border border-red-300 px-3 py-1.5 text-xs font-medium text-red-700">
-                        Cancel
-                      </button>
+                      <button className="btn-danger">Cancel</button>
                     </form>
                   </li>
                 ))}
             </ul>
           </div>
         ) : (
-          <div className="mt-3">
+          <div className="card mt-3">
             <p className="text-sm text-slate-600">
               Want to let people book calls with you? Set up your public booking page.
             </p>
-            <Link
-              href="/dashboard/provider"
-              className="mt-3 inline-block rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white"
-            >
+            <Link href="/dashboard/provider" className="btn-primary mt-3 inline-flex">
               Become a provider
             </Link>
           </div>
@@ -144,20 +142,22 @@ export default async function DashboardPage() {
       </section>
 
       <section className="mt-10">
-        <h2 className="text-lg font-medium">Your call requests</h2>
+        <h2 className="text-lg font-medium text-slate-900">Your call requests</h2>
         <ul className="mt-3 space-y-3">
           {myBookingsAsRequester.map((b) => (
-            <li key={b.id} className="rounded-md border border-slate-200 p-3 text-sm">
+            <li key={b.id} className="card flex flex-wrap items-center justify-between gap-2 text-sm">
               <p>
-                With {b.providerProfile.displayName} — {b.startsAt.toLocaleString()} ·{" "}
-                <span className="font-medium">{b.status}</span>
+                With {b.providerProfile.displayName} — {b.startsAt.toLocaleString()}
               </p>
+              <span
+                className={`badge badge-${b.status.toLowerCase()}`}
+              >
+                {b.status}
+              </span>
               {b.status === "APPROVED" || b.status === "PENDING" ? (
-                <form action={cancelAsRequesterAction} className="mt-2">
+                <form action={cancelAsRequesterAction}>
                   <input type="hidden" name="bookingId" value={b.id} />
-                  <button className="rounded-md border border-red-300 px-3 py-1.5 text-xs font-medium text-red-700">
-                    Cancel
-                  </button>
+                  <button className="btn-danger">Cancel</button>
                 </form>
               ) : null}
             </li>

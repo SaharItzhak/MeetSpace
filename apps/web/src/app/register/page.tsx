@@ -33,37 +33,32 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-6 px-4 py-12">
-      <h1 className="text-2xl font-semibold">Create your account</h1>
-      {error ? <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p> : null}
-      <form onSubmit={onSubmit} className="flex flex-col gap-3">
-        <input name="name" required placeholder="Name" className="rounded-md border border-slate-300 px-3 py-2 text-sm" />
-        <input
-          name="email"
-          type="email"
-          required
-          placeholder="Email"
-          className="rounded-md border border-slate-300 px-3 py-2 text-sm"
-        />
-        <input
-          name="password"
-          type="password"
-          required
-          minLength={8}
-          placeholder="Password (min 8 characters)"
-          className="rounded-md border border-slate-300 px-3 py-2 text-sm"
-        />
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
-        >
-          {submitting ? "Creating account..." : "Create account"}
-        </button>
-      </form>
+    <main className="mx-auto flex min-h-[calc(100vh-57px)] max-w-sm flex-col justify-center gap-6 px-4 py-12">
+      <div className="card">
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Create your account</h1>
+        <p className="mt-1 text-sm text-slate-500">Takes less than a minute.</p>
+        {error ? (
+          <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
+        ) : null}
+        <form onSubmit={onSubmit} className="mt-5 flex flex-col gap-3">
+          <input name="name" required placeholder="Name" className="input" />
+          <input name="email" type="email" required placeholder="Email" className="input" />
+          <input
+            name="password"
+            type="password"
+            required
+            minLength={8}
+            placeholder="Password (min 8 characters)"
+            className="input"
+          />
+          <button type="submit" disabled={submitting} className="btn-primary w-full">
+            {submitting ? "Creating account..." : "Create account"}
+          </button>
+        </form>
+      </div>
       <p className="text-center text-sm text-slate-500">
         Already have an account?{" "}
-        <Link href="/login" className="underline">
+        <Link href="/login" className="font-medium text-indigo-600 hover:underline">
           Sign in
         </Link>
       </p>

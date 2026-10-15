@@ -96,6 +96,20 @@ model ProviderProfile {
   defaultReminderLeadMinutes  Int      @default(30)
   /// Which of the provider's Google calendars to read/write. "primary" by default.
   googleCalendarId            String   @default("primary")
+  /// When true, only requesters with an APPROVED ProviderContact row may book (see
+  /// ProviderContact below) — lets e.g. a teacher restrict booking to an approved group
+  /// of parents instead of accepting requests from anyone with the link.
+  requireApproval             Boolean  @default(false)
+  /// Optional custom message shown at the top of the public booking page.
+  welcomeMessage              String?
+  /// Minimum lead time (minutes) a slot must start in the future to be bookable.
+  minNoticeMinutes            Int      @default(60)
+  /// How many days into the future open slots are computed/shown.
+  maxAdvanceDays              Int      @default(21)
+  /// Extra buffer (minutes) kept clear before/after every busy interval and booking.
+  bufferMinutes               Int      @default(0)
+  /// Hex color used to brand the provider's public booking page.
+  accentColor                 String   @default("#4f46e5")
   createdAt                   DateTime @default(now())
   updatedAt                   DateTime @updatedAt
 
@@ -103,8 +117,35 @@ model ProviderProfile {
   weeklyRules    WeeklyAvailabilityRule[]
   blackoutDates  BlackoutDate[]
   bookings       Booking[]
+  contacts       ProviderContact[]
 
   @@map("provider_profiles")
+}
+
+enum ContactStatus {
+  PENDING
+  APPROVED
+  BLOCKED
+}
+
+/// One row per person allowed (or requesting to be allowed) to book with a provider,
+/// used only when ProviderProfile.requireApproval is true. Created either by the
+/// requester themselves (self-service "request access") or directly by the provider
+/// (pre-approving e.g. a known group of parents).
+model ProviderContact {
+  id                String        @id @default(cuid())
+  providerProfileId String
+  email             String
+  name              String?
+  status            ContactStatus @default(PENDING)
+  requestedAt       DateTime      @default(now())
+  decidedAt         DateTime?
+
+  providerProfile ProviderProfile @relation(fields: [providerProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([providerProfileId, email])
+  @@index([providerProfileId, status])
+  @@map("provider_contacts")
 }
 
 model WeeklyAvailabilityRule {

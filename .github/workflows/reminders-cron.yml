@@ -1,0 +1,31 @@
+name: Reminders Cron
+
+# Vercel's free-tier Cron only triggers once a day, which is far too coarse for
+# "remind N minutes before a call". This workflow polls our protected cron
+# endpoint every ~5 minutes instead, so due reminder emails go out on time.
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  trigger-reminders:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call reminders cron endpoint
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$APP_URL" ] || [ -z "$CRON_SECRET" ]; then
+            echo "APP_URL and/or CRON_SECRET repo secrets are not set; skipping." >&2
+            exit 0
+          fi
+          status=$(curl -s -o response.txt -w "%{http_code}" -X POST \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            "$APP_URL/api/cron/reminders")
+          echo "HTTP status: $status"
+          cat response.txt
+          if [ "$status" -ge 300 ]; then
+            exit 1
+          fi

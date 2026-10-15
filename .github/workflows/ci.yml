@@ -1,0 +1,105 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-typecheck-test-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests (packages/shared)
+        run: npm run test
+
+      - name: Build
+        env:
+          DATABASE_URL: "postgresql://user:pass@localhost:5432/meetspace"
+          NEXTAUTH_SECRET: "ci-build-secret-ci-build-secret"
+          AUTH_SECRET: "ci-build-secret-ci-build-secret"
+        run: npm run build
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: lint-typecheck-test-build
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: meetspace
+          POSTGRES_PASSWORD: meetspace
+          POSTGRES_DB: meetspace
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U meetspace"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: "postgresql://meetspace:meetspace@localhost:5432/meetspace"
+      NEXTAUTH_SECRET: "ci-e2e-secret-ci-e2e-secret"
+      AUTH_SECRET: "ci-e2e-secret-ci-e2e-secret"
+      MOCK_CALENDAR: "1"
+      MOCK_EMAIL: "1"
+      CRON_SECRET: "ci-e2e-cron-secret"
+      PLAYWRIGHT_BASE_URL: "http://localhost:3000"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+        working-directory: apps/web
+
+      - name: Sync Prisma schema to the test database
+        run: npx prisma db push
+        working-directory: apps/web
+
+      - name: Seed test data
+        run: npm run db:seed --workspace=apps/web
+
+      - name: Build
+        run: npm run build
+
+      - name: Start app
+        run: npx next start -p 3000 &
+        working-directory: apps/web
+
+      - name: Wait for app to be ready
+        run: npx wait-on http://localhost:3000 --timeout 60000
+
+      - name: Run Playwright e2e tests
+        run: npm run test:e2e --workspace=apps/web
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report/
+          retention-days: 7

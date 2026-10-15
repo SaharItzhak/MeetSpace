@@ -18,6 +18,7 @@ export class MockCalendarProvider implements CalendarProvider {
   readonly events = new Map<string, CreateEventInput>();
   private nextId = 1;
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- signature must match CalendarProvider
   async freeBusy(_input: FreeBusyInput): Promise<FreeBusyResult> {
     return {
       busy: [...this.events.values()].map((event) => ({ start: event.start, end: event.end })),

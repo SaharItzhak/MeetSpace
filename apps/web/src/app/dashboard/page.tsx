@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { approveBooking, declineBooking, cancelBooking } from "@/lib/booking/service";
+import CopyLinkButton from "./copy-link-button";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -59,11 +60,12 @@ export default async function DashboardPage() {
         <h2 className="text-lg font-medium">Provider</h2>
         {providerProfile ? (
           <div className="mt-3 space-y-4">
-            <p className="text-sm text-slate-600">
+            <p className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
               Your public booking page:{" "}
               <Link href={`/book/${providerProfile.slug}`} className="underline">
                 /book/{providerProfile.slug}
               </Link>
+              <CopyLinkButton path={`/book/${providerProfile.slug}`} />
             </p>
             <Link href="/dashboard/provider" className="text-sm underline">
               Edit availability &amp; settings

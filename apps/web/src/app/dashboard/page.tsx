@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { approveBooking, declineBooking, cancelBooking } from "@/lib/booking/service";
@@ -26,21 +27,28 @@ export default async function DashboardPage() {
     orderBy: { startsAt: "asc" },
   });
 
+  // Each action mutates booking state shown on this very page. Server Actions don't
+  // automatically invalidate the client Router Cache unless told to, so without this
+  // the dashboard can keep rendering pre-mutation data after the form submits.
   async function approveAction(formData: FormData) {
     "use server";
     await approveBooking(String(formData.get("bookingId")));
+    revalidatePath("/dashboard");
   }
   async function declineAction(formData: FormData) {
     "use server";
     await declineBooking(String(formData.get("bookingId")));
+    revalidatePath("/dashboard");
   }
   async function cancelAsProviderAction(formData: FormData) {
     "use server";
     await cancelBooking(String(formData.get("bookingId")), "provider");
+    revalidatePath("/dashboard");
   }
   async function cancelAsRequesterAction(formData: FormData) {
     "use server";
     await cancelBooking(String(formData.get("bookingId")), "requester");
+    revalidatePath("/dashboard");
   }
 
   return (

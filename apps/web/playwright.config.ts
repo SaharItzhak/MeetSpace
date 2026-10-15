@@ -3,6 +3,10 @@ import { defineConfig, devices } from "@playwright/test";
 export default defineConfig({
   testDir: "./e2e",
   timeout: 30_000,
+  // Server-action mutations (approve/decline) trigger a Next.js router refresh that
+  // round-trips through the server; the default 5s assertion timeout is too tight on
+  // slower/shared CI runners, so give post-mutation assertions more room.
+  expect: { timeout: 10_000 },
   fullyParallel: false,
   workers: 1,
   reporter: [["list"]],

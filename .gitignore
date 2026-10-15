@@ -28,6 +28,10 @@ dist/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+*.pid
+server*.log
+devserver*.log
+prodserver*.log
 
 # Vercel
 .vercel

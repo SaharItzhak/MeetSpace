@@ -56,6 +56,10 @@ const providers: Provider[] = [
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
+  // Required for self-hosted deployments (CI's `next start`, Vercel preview URLs, etc.)
+  // where Auth.js can't otherwise infer a trusted host from AUTH_URL/NEXTAUTH_URL and
+  // would silently fail to complete the post-sign-in redirect.
+  trustHost: true,
   providers,
   pages: {
     signIn: "/login",
